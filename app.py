@@ -45,12 +45,16 @@ TARGET_AUDIO_KBPS = 192
 # Which player client avoids that depends on whether we're authenticated:
 #   - No cookies: identify as tv/web_safari, which bypasses the anonymous
 #     bot wall in most cases.
-#   - With cookies: yt-dlp's own default ("tv_downgraded") has an active
-#     upstream bug that throws "The page needs to be reloaded." for many
-#     videos, so explicitly request default+web_embedded instead, which
-#     works with a logged-in session.
+#   - With cookies: yt-dlp defaults to a client called "tv_downgraded" for
+#     logged-in sessions, which currently has an active, unresolved
+#     upstream bug throwing "The page needs to be reloaded." for many
+#     videos (see yt-dlp issues #17389 / #17405, both still open as of
+#     Aug 2026). Explicitly excluding it and falling back to default +
+#     web_embedded is the best known workaround right now, but this is a
+#     moving target — YouTube changes this often enough that no client
+#     list is guaranteed to keep working.
 YOUTUBE_PLAYER_CLIENTS_ANON = ["tv", "web_safari"]
-YOUTUBE_PLAYER_CLIENTS_AUTH = ["default", "web_embedded"]
+YOUTUBE_PLAYER_CLIENTS_AUTH = ["default", "-tv_downgraded", "web_embedded"]
 
 # Optional: path to a cookies.txt file (Netscape format) exported from a
 # real, signed-in YouTube session. If present, it's used as a fallback for
@@ -79,6 +83,24 @@ def base_ydl_opts():
     if has_cookies:
         opts["cookiefile"] = COOKIES_FILE
     return opts
+
+
+def extract_with_fallback(ydl_opts, url, download):
+    """Run yt-dlp's extract_info, and if it fails on the known
+    "page needs to be reloaded" bug (tv_downgraded client, only hit when
+    cookies are in play), retry once without cookies/auth so a public
+    video still gets through even while that upstream bug is unresolved."""
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            return ydl.extract_info(url, download=download)
+    except Exception as e:
+        if "cookiefile" in ydl_opts and "reload" in str(e).lower():
+            fallback_opts = dict(ydl_opts)
+            fallback_opts.pop("cookiefile", None)
+            fallback_opts["extractor_args"] = {"youtube": {"player_client": YOUTUBE_PLAYER_CLIENTS_ANON}}
+            with yt_dlp.YoutubeDL(fallback_opts) as ydl:
+                return ydl.extract_info(url, download=download)
+        raise
 
 # Lets yt-dlp pull fragmented (DASH/HLS) streams over several connections at
 # once instead of one fragment at a time — the single biggest download-speed
@@ -842,8 +864,7 @@ def formats():
             "noplaylist": True,
             "socket_timeout": 15,
         }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+        info = extract_with_fallback(ydl_opts, url, download=False)
         all_formats = info.get("formats") or [info]
         duration = info.get("duration")
 
@@ -1055,8 +1076,7 @@ def run_download(job_id, url, format_id, has_audio, kind, output_path, compress=
                 "postprocessors": [{"key": "FFmpegVideoConvertor", "preferedformat": "mp4"}],
             }
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.extract_info(url, download=True)
+        extract_with_fallback(ydl_opts, url, download=True)
 
         if kind == "video" and compress != "original" and output_path.exists():
             set_job(job_id, {"status": "compressing", "percent": ""})
