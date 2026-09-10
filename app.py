@@ -42,9 +42,15 @@ TARGET_AUDIO_KBPS = 192
 
 # YouTube increasingly challenges requests from datacenter IPs (the kind
 # any cloud host uses) with a "Sign in to confirm you're not a bot" wall.
-# Identifying as the TV/web_safari clients instead of the default web
-# client avoids that challenge in most cases without needing cookies.
-YOUTUBE_PLAYER_CLIENTS = ["tv", "web_safari"]
+# Which player client avoids that depends on whether we're authenticated:
+#   - No cookies: identify as tv/web_safari, which bypasses the anonymous
+#     bot wall in most cases.
+#   - With cookies: yt-dlp's own default ("tv_downgraded") has an active
+#     upstream bug that throws "The page needs to be reloaded." for many
+#     videos, so explicitly request default+web_embedded instead, which
+#     works with a logged-in session.
+YOUTUBE_PLAYER_CLIENTS_ANON = ["tv", "web_safari"]
+YOUTUBE_PLAYER_CLIENTS_AUTH = ["default", "web_embedded"]
 
 # Optional: path to a cookies.txt file (Netscape format) exported from a
 # real, signed-in YouTube session. If present, it's used as a fallback for
@@ -52,12 +58,25 @@ YOUTUBE_PLAYER_CLIENTS = ["tv", "web_safari"]
 # the deployment notes for how to generate and mount this file.
 COOKIES_FILE = os.environ.get("YTDLP_COOKIES_FILE", "/app/cookies.txt")
 
+# Railway (and most host-based platforms) have no easy way to upload a raw
+# file, but they do let you set an environment variable. If YTDLP_COOKIES
+# holds the *contents* of a cookies.txt file, write it out once at startup
+# so COOKIES_FILE above picks it up normally.
+_cookies_env = os.environ.get("YTDLP_COOKIES")
+if _cookies_env and not Path(COOKIES_FILE).exists():
+    try:
+        Path(COOKIES_FILE).write_text(_cookies_env)
+    except OSError:
+        pass
+
 
 def base_ydl_opts():
     """Shared yt-dlp options that help avoid YouTube's bot-detection wall.
     Applied to both the format-listing call and the actual download."""
-    opts = {"extractor_args": {"youtube": {"player_client": YOUTUBE_PLAYER_CLIENTS}}}
-    if Path(COOKIES_FILE).exists():
+    has_cookies = Path(COOKIES_FILE).exists()
+    clients = YOUTUBE_PLAYER_CLIENTS_AUTH if has_cookies else YOUTUBE_PLAYER_CLIENTS_ANON
+    opts = {"extractor_args": {"youtube": {"player_client": clients}}}
+    if has_cookies:
         opts["cookiefile"] = COOKIES_FILE
     return opts
 
