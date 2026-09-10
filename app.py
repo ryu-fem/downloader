@@ -11,7 +11,7 @@ from urllib.parse import urlparse, unquote
 
 import requests
 import yt_dlp
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template_string, send_file, abort
 
 app = Flask(__name__)
 
@@ -39,6 +39,27 @@ FILENAME_LOCK = threading.Lock()
 # so this is the number to use for size estimates, not the source stream's
 # own bitrate.
 TARGET_AUDIO_KBPS = 192
+
+# YouTube increasingly challenges requests from datacenter IPs (the kind
+# any cloud host uses) with a "Sign in to confirm you're not a bot" wall.
+# Identifying as the TV/web_safari clients instead of the default web
+# client avoids that challenge in most cases without needing cookies.
+YOUTUBE_PLAYER_CLIENTS = ["tv", "web_safari"]
+
+# Optional: path to a cookies.txt file (Netscape format) exported from a
+# real, signed-in YouTube session. If present, it's used as a fallback for
+# videos that still get blocked after the player-client change above. See
+# the deployment notes for how to generate and mount this file.
+COOKIES_FILE = os.environ.get("YTDLP_COOKIES_FILE", "/app/cookies.txt")
+
+
+def base_ydl_opts():
+    """Shared yt-dlp options that help avoid YouTube's bot-detection wall.
+    Applied to both the format-listing call and the actual download."""
+    opts = {"extractor_args": {"youtube": {"player_client": YOUTUBE_PLAYER_CLIENTS}}}
+    if Path(COOKIES_FILE).exists():
+        opts["cookiefile"] = COOKIES_FILE
+    return opts
 
 # Lets yt-dlp pull fragmented (DASH/HLS) streams over several connections at
 # once instead of one fragment at a time — the single biggest download-speed
@@ -86,7 +107,10 @@ def set_job(job_id, payload):
         if len(JOBS) > 200:
             cutoff = time.time() - JOB_TTL_SECONDS
             for jid in [j for j, v in JOBS.items() if v.get("_ts", 0) < cutoff]:
-                JOBS.pop(jid, None)
+                stale = JOBS.pop(jid, None)
+                stale_path = (stale or {}).get("path")
+                if stale_path:
+                    Path(stale_path).unlink(missing_ok=True)
 
 
 def get_job(job_id):
@@ -628,7 +652,7 @@ function pollProgress(jobId) {
       el('progressFill').style.width = '100%';
       el('progressPct').textContent = '100%';
       clearInterval(interval);
-      finishProgress(true, 'Saved as ' + data.filename);
+      finishProgress(true, data.filename, data.download_url);
     } else if (data.status === 'error') {
       clearInterval(interval);
       finishProgress(false, data.error);
@@ -636,15 +660,36 @@ function pollProgress(jobId) {
   }, 1000);
 }
 
-function finishProgress(ok, message) {
+function finishProgress(ok, message, downloadUrl) {
   el('progressBox').style.display = 'none';
-  showResult(ok, ok ? ('✓ ' + message) : ('✕ ' + message));
+  showResult(ok, message, downloadUrl);
 }
 
-function showResult(ok, message) {
+function showResult(ok, message, downloadUrl) {
   const r = el('resultNote');
   r.className = 'result-note ' + (ok ? 'ok' : 'err');
-  r.textContent = message;
+  r.innerHTML = '';
+
+  const text = document.createElement('span');
+  text.textContent = (ok ? '✓ ' : '✕ ') + message;
+  r.appendChild(text);
+
+  if (ok && downloadUrl) {
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.textContent = 'Download';
+    link.className = 'btn btn-primary';
+    link.style.marginLeft = 'auto';
+    link.setAttribute('download', '');
+    r.appendChild(link);
+    // Kick off the browser download automatically too, so the person
+    // doesn't have to click if they don't need to.
+    const auto = document.createElement('iframe');
+    auto.style.display = 'none';
+    auto.src = downloadUrl;
+    document.body.appendChild(auto);
+  }
+
   r.style.display = 'flex';
 }
 
@@ -772,6 +817,7 @@ def formats():
 
     try:
         ydl_opts = {
+            **base_ydl_opts(),
             "quiet": True,
             "no_warnings": True,
             "noplaylist": True,
@@ -958,6 +1004,7 @@ def run_download(job_id, url, format_id, has_audio, kind, output_path, compress=
     outtmpl = f"{stem}.%(ext)s"
 
     common_opts = {
+        **base_ydl_opts(),
         "outtmpl": outtmpl,
         "noplaylist": True,
         "ignoreerrors": True,
@@ -1002,7 +1049,12 @@ def run_download(job_id, url, format_id, has_audio, kind, output_path, compress=
             finally:
                 tmp_path.unlink(missing_ok=True)
 
-        set_job(job_id, {"status": "finished", "filename": output_path.name})
+        set_job(job_id, {
+            "status": "finished",
+            "filename": output_path.name,
+            "path": str(output_path),
+            "download_url": f"/file/{job_id}",
+        })
     except Exception as e:
         set_job(job_id, {"status": "error", "error": str(e)})
     finally:
@@ -1030,7 +1082,12 @@ def run_direct_download(job_id, url, output_path):
                         set_job(job_id, {"status": "downloading", "percent": f"{pct:.1f}%"})
                     else:
                         set_job(job_id, {"status": "downloading", "percent": format_size(downloaded) or "…"})
-        set_job(job_id, {"status": "finished", "filename": output_path.name})
+        set_job(job_id, {
+            "status": "finished",
+            "filename": output_path.name,
+            "path": str(output_path),
+            "download_url": f"/file/{job_id}",
+        })
     except Exception as e:
         set_job(job_id, {"status": "error", "error": str(e)})
     finally:
@@ -1069,6 +1126,17 @@ def download():
 @app.route("/progress/<job_id>")
 def progress(job_id):
     return jsonify(get_job(job_id))
+
+
+@app.route("/file/<job_id>")
+def get_file(job_id):
+    job = get_job(job_id)
+    if job.get("status") != "finished" or not job.get("path"):
+        abort(404)
+    path = Path(job["path"])
+    if not path.exists():
+        abort(404)
+    return send_file(path, as_attachment=True, download_name=job.get("filename") or path.name)
 
 
 if __name__ == "__main__":
