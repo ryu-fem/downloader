@@ -439,7 +439,7 @@ PAGE = """
   <div class="card">
     <div class="field-row">
       <input type="text" id="url" placeholder="Paste your link" autocomplete="off">
-      <button class="btn btn-primary" id="loadBtn" onclick="fetchFormats()">Fetch</button>
+      <button class="btn btn-primary" id="loadBtn" onclick="fetchFormats()">Search</button>
     </div>
 
     <div class="meta" id="meta"></div>
@@ -532,7 +532,7 @@ async function fetchFormats() {
     showResult(false, 'Could not reach that source — check the link and try again.');
   } finally {
     loadBtn.disabled = false;
-    loadBtn.textContent = 'Fetch';
+    loadBtn.textContent = 'Search';
   }
 }
 
