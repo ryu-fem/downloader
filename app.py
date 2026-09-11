@@ -324,12 +324,32 @@ PAGE = """
 
   .meta {
     display: none;
-    margin-top: 14px;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .meta img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: var(--surface);
+    display: block;
+  }
+  .meta .meta-title {
     font-size: 13.5px;
-    color: var(--muted);
+    color: var(--ink);
+    line-height: 1.4;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-width: 0;
   }
 
   .switches { display: none; gap: 8px; margin-top: 20px; }
@@ -518,8 +538,9 @@ async function fetchFormats() {
     if (data.error) { showResult(false, data.error); return; }
 
     if (data.title) {
-      el('meta').textContent = data.title;
-      el('meta').style.display = 'block';
+      el('meta').innerHTML = (data.thumbnail ? `<img src="${data.thumbnail}" alt="">` : '') +
+        `<span class="meta-title">${data.title}</span>`;
+      el('meta').style.display = 'flex';
     }
 
     currentUrl = url;
@@ -912,6 +933,7 @@ def formats():
 
         return jsonify({
             "title": info.get("title", ""),
+            "thumbnail": info.get("thumbnail", ""),
             "is_direct": False,
             "video_formats": video_result,
             "audio_formats": audio_result,
