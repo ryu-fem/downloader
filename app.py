@@ -54,7 +54,7 @@ TARGET_AUDIO_KBPS = 192
 #     moving target — YouTube changes this often enough that no single
 #     client list is guaranteed to keep working, which is why several
 #     strategies are tried in order below rather than just one.
-YOUTUBE_STRATEGY_ORDER = ["auth", "tv", "mweb", "web"]
+YOUTUBE_STRATEGY_ORDER = ["auth", "auth_auto", "auto", "android", "ios", "tv"]
 
 # Optional: path to a cookies.txt file (Netscape format) exported from a
 # real, signed-in YouTube session. If present, it's used as a fallback for
@@ -76,10 +76,17 @@ if _cookies_env and not Path(COOKIES_FILE).exists():
 
 def client_opts_for(mode):
     """yt-dlp option fragment for one named strategy, or None if that
-    strategy isn't usable right now (e.g. 'auth' with no cookies file).
-    Format IDs are only valid within the strategy that produced them, so
-    whichever one lists the formats must be the same one that later
-    downloads them — see extract_with_fallback."""
+    strategy isn't usable right now (e.g. an auth strategy with no cookies
+    file). Format IDs are only valid within the strategy that produced
+    them, so whichever one lists the formats must be the same one that
+    later downloads them — see extract_with_fallback.
+
+    Deliberately mixes two different kinds of fallback: specific player
+    clients (tv/android/ios — each occasionally blocked or bugged on its
+    own) and yt-dlp's own *default* client selection (which tries several
+    clients internally and is sometimes more resilient than any single
+    one we'd pick by hand). No single strategy has stayed reliable for
+    long as YouTube keeps changing its checks, hence trying several."""
     if mode == "auth":
         if not Path(COOKIES_FILE).exists():
             return None
@@ -87,12 +94,18 @@ def client_opts_for(mode):
             "extractor_args": {"youtube": {"player_client": ["default", "-tv_downgraded", "web_embedded"]}},
             "cookiefile": COOKIES_FILE,
         }
+    if mode == "auth_auto":
+        if not Path(COOKIES_FILE).exists():
+            return None
+        return {"cookiefile": COOKIES_FILE}
+    if mode == "auto":
+        return {}
+    if mode == "android":
+        return {"extractor_args": {"youtube": {"player_client": ["android"]}}}
+    if mode == "ios":
+        return {"extractor_args": {"youtube": {"player_client": ["ios"]}}}
     if mode == "tv":
         return {"extractor_args": {"youtube": {"player_client": ["tv", "web_safari"]}}}
-    if mode == "mweb":
-        return {"extractor_args": {"youtube": {"player_client": ["mweb"]}}}
-    if mode == "web":
-        return {"extractor_args": {"youtube": {"player_client": ["web"]}}}
     return None
 
 
