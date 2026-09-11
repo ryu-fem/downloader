@@ -182,24 +182,20 @@ PAGE = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>puller</title>
+<title>Stub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #1e1e1e;
-    --panel: #252526;
-    --panel-2: #2d2d2d;
-    --edge: #3c3c3c;
-    --text: #d4d4d4;
-    --muted: #858585;
-    --muted-dim: #5a5a5a;
-    --accent: #4ec9b0;
-    --keyword: #c586c0;
-    --string: #ce9178;
-    --success: #6a9955;
-    --error: #f14c4c;
-    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+    --bg: #14171f;
+    --ticket: #1d212b;
+    --ticket-edge: #333a4a;
+    --gold: #e8b64b;
+    --gold-dim: #a9853c;
+    --red: #c1443c;
+    --ivory: #f2ead9;
+    --muted: #9b917f;
+    --muted-dim: #66604f;
   }
 
   * { box-sizing: border-box; }
@@ -207,267 +203,281 @@ PAGE = """
   body {
     margin: 0;
     background: var(--bg);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 14px;
+    color: var(--ivory);
+    font-family: 'IBM Plex Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
-    padding: 40px 16px;
+    padding: 44px 16px 60px;
   }
 
-  ::selection { background: rgba(78,201,176,0.3); color: var(--text); }
+  ::selection { background: rgba(232,182,75,0.3); color: var(--ivory); }
 
-  .window {
-    max-width: 620px;
-    margin: 0 auto;
-    background: var(--panel);
-    border: 1px solid var(--edge);
-    border-radius: 6px;
-    overflow: hidden;
+  .wrap { max-width: 560px; margin: 0 auto; }
+
+  .bulbs {
+    height: 12px;
+    background-image: radial-gradient(circle, var(--gold) 2.4px, transparent 2.8px);
+    background-size: 22px 12px;
+    background-repeat: repeat-x;
+    background-position: center;
+    margin-bottom: -1px;
   }
 
-  .titlebar {
+  .marquee {
+    background: var(--gold);
+    color: #241a06;
     display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 10px 14px;
-    background: var(--panel-2);
-    border-bottom: 1px solid var(--edge);
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 12px 22px 10px;
+    border-radius: 10px 10px 0 0;
   }
-  .titlebar .dots { display: flex; gap: 7px; }
-  .titlebar .dots span { width: 11px; height: 11px; border-radius: 50%; display: block; }
-  .titlebar .dots span:nth-child(1) { background: #ff5f56; }
-  .titlebar .dots span:nth-child(2) { background: #ffbd2e; }
-  .titlebar .dots span:nth-child(3) { background: #27c93f; }
-  .titlebar .path { color: var(--muted); font-size: 12.5px; }
-
-  .body {
-    padding: 20px 22px 24px;
+  .marquee .brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+  }
+  .marquee .admit {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: #5c4315;
   }
 
-  .comment { color: var(--muted-dim); font-size: 13px; margin: 0 0 16px; }
-  .comment .kw { color: var(--muted); }
+  .perf {
+    height: 17px;
+    background-image: radial-gradient(circle, var(--bg) 7px, transparent 7.3px);
+    background-size: 26px 17px;
+    background-repeat: repeat-x;
+    background-position: center top;
+    background-color: var(--gold);
+  }
 
-  .prompt-row {
+  .ticket {
+    background: var(--ticket);
+    border: 1px solid var(--ticket-edge);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 26px 26px 22px;
+  }
+
+  .tagline {
+    color: var(--muted);
+    font-size: 14.5px;
+    margin: 0 0 22px;
+    line-height: 1.5;
+  }
+
+  .field-row {
     display: flex;
-    align-items: center;
     gap: 10px;
-    background: var(--bg);
-    border: 1px solid var(--edge);
-    border-radius: 4px;
-    padding: 0 6px 0 14px;
   }
-  .prompt-row .caret { color: var(--accent); font-weight: 600; flex-shrink: 0; }
-  .prompt-row:focus-within { border-color: var(--accent); }
 
-  .prompt-row input {
+  .field-row input {
     flex: 1;
-    background: transparent;
-    border: none;
+    background: var(--bg);
+    border: 1px solid var(--ticket-edge);
+    border-radius: 7px;
+    color: var(--ivory);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14.5px;
+    padding: 12px 14px;
     outline: none;
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 14px;
-    padding: 11px 0;
+    transition: border-color 0.15s ease;
   }
-  .prompt-row input::placeholder { color: var(--muted-dim); }
+  .field-row input::placeholder { color: var(--muted-dim); }
+  .field-row input:focus { border-color: var(--gold); }
 
   .btn {
-    border: 1px solid var(--edge);
-    border-radius: 3px;
-    font-family: var(--mono);
-    font-weight: 500;
-    font-size: 13px;
+    border: none;
+    border-radius: 7px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
     cursor: pointer;
-    background: var(--panel-2);
-    color: var(--text);
-    transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
+    transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease;
   }
-  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-  .btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
-  .btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-  .btn-run { padding: 9px 18px; margin: 7px 0; color: var(--keyword); border-color: transparent; }
-  .btn-run:hover:not(:disabled) { border-color: var(--keyword); color: var(--keyword); background: var(--panel); }
+  .btn-fetch {
+    background: var(--gold);
+    color: #241a06;
+    padding: 12px 20px;
+    white-space: nowrap;
+  }
+  .btn-fetch:hover:not(:disabled) { filter: brightness(1.08); }
 
-  .btn-get { padding: 7px 13px; font-size: 12px; flex-shrink: 0; }
+  .btn-get {
+    background: transparent;
+    border: 1px solid var(--ticket-edge);
+    color: var(--ivory);
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+  .btn-get:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
 
   .meta {
     display: none;
     margin-top: 14px;
+    font-size: 13.5px;
     color: var(--muted);
-    font-size: 13px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .meta::before { content: "> "; color: var(--muted-dim); }
 
-  .flags {
+  .switches {
     display: none;
-    gap: 6px;
-    margin-top: 16px;
-    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--ticket-edge);
   }
-  .flag-btn {
+  .switch-group { display: flex; gap: 6px; }
+  .switch-btn {
     background: transparent;
-    border: 1px solid var(--edge);
+    border: 1px solid var(--ticket-edge);
     color: var(--muted);
-    border-radius: 3px;
-    padding: 5px 11px;
-    font-family: var(--mono);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-size: 12.5px;
+    font-weight: 500;
     cursor: pointer;
-    transition: border-color 0.1s ease, color 0.1s ease;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   }
-  .flag-btn.active { border-color: var(--accent); color: var(--accent); }
-  .flag-btn:hover:not(.active) { color: var(--text); }
-  .flag-btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+  .switch-btn.active { background: rgba(232,182,75,0.12); border-color: var(--gold); color: var(--gold); }
+  .switch-btn:hover:not(.active) { color: var(--ivory); }
+  .switch-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
   .results {
-    margin-top: 16px;
+    margin-top: 18px;
     display: none;
     flex-direction: column;
-    border-top: 1px solid var(--edge);
+    gap: 2px;
   }
 
   .result-row {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 9px 2px;
-    border-bottom: 1px solid var(--edge);
-  }
-
-  .result-spec {
-    font-size: 12.5px;
-    color: var(--text);
-    display: flex;
     align-items: baseline;
-    gap: 10px;
+    gap: 8px;
+    padding: 10px 0;
+  }
+  .result-row .label { font-size: 14.5px; color: var(--ivory); flex-shrink: 0; }
+  .result-row .note { font-size: 11.5px; color: var(--muted-dim); flex-shrink: 0; }
+  .result-row .leader {
     flex: 1;
-    min-width: 0;
-  }
-  .result-spec .ext {
-    color: var(--string);
-    flex-shrink: 0;
-    width: 34px;
-  }
-  .result-spec .res { color: var(--text); flex-shrink: 0; }
-  .result-spec .note { color: var(--muted-dim); font-size: 11.5px; }
-  .result-spec .size {
-    margin-left: auto;
-    color: var(--muted);
-    flex-shrink: 0;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--muted-dim);
+    font-size: 13px;
   }
+  .result-row .leader::after {
+    content: " . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ";
+  }
+  .result-row .size { font-size: 13px; color: var(--muted); flex-shrink: 0; }
 
   .progress-box {
     display: none;
-    margin-top: 16px;
-    padding: 12px 0 0;
-    border-top: 1px solid var(--edge);
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--ticket-edge);
   }
-  .progress-line { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
-  .progress-line::before { content: "> "; color: var(--muted-dim); }
+  .progress-line { font-size: 13.5px; color: var(--muted); margin-bottom: 10px; }
   .progress-track {
-    height: 14px;
+    height: 8px;
     background: var(--bg);
-    border: 1px solid var(--edge);
-    border-radius: 2px;
+    border-radius: 999px;
     overflow: hidden;
-    display: flex;
-    align-items: center;
   }
   .progress-fill {
-    height: 100%;
-    width: 0%;
-    background: var(--accent);
-    background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15) 3px, transparent 3px, transparent 7px);
+    height: 100%; width: 0%;
+    background: var(--gold);
     transition: width 0.4s ease;
+    border-radius: 999px;
   }
   .progress-pct { font-size: 12px; color: var(--muted); margin-top: 6px; text-align: right; }
-  @media (prefers-reduced-motion: reduce) {
-    .progress-fill { transition: none; }
-  }
 
   .result-note {
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px solid var(--edge);
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--ticket-edge);
     display: none;
     align-items: center;
     gap: 12px;
-    font-size: 13px;
+    font-size: 14px;
   }
-  .result-note::before { content: "> "; color: var(--muted-dim); }
-  .result-note.ok { color: var(--success); }
-  .result-note.err { color: var(--error); }
+  .result-note.ok { color: var(--gold); }
+  .result-note.err { color: var(--red); }
   .result-note .get-link {
     margin-left: auto;
-    color: var(--accent);
+    color: #241a06;
+    background: var(--gold);
     text-decoration: none;
-    border: 1px solid var(--edge);
-    border-radius: 3px;
-    padding: 5px 11px;
-    font-size: 12px;
+    border-radius: 7px;
+    padding: 7px 15px;
+    font-size: 13px;
+    font-weight: 600;
     flex-shrink: 0;
   }
-  .result-note .get-link:hover { border-color: var(--accent); }
+  .result-note .get-link:hover { filter: brightness(1.08); }
 
   .credit {
-    max-width: 620px;
-    margin: 14px auto 0;
+    text-align: center;
+    margin: 18px auto 0;
     color: var(--muted-dim);
     font-size: 12px;
   }
-  .credit::before { content: "// "; }
   .credit span { color: var(--muted); }
 
   @media (max-width: 560px) {
-    body { padding: 20px 10px; }
-    .prompt-row { flex-wrap: wrap; padding: 10px 12px; }
-    .btn-run { width: 100%; text-align: center; }
-    .result-row { flex-wrap: wrap; }
+    .field-row { flex-direction: column; }
+    .btn-fetch { width: 100%; }
+    .marquee .brand { font-size: 24px; }
+    .result-note { flex-wrap: wrap; }
+    .result-note .get-link { margin-left: 0; width: 100%; text-align: center; }
   }
 </style>
 </head>
 <body>
 
-<div class="window">
-  <div class="titlebar">
-    <div class="dots"><span></span><span></span><span></span></div>
-    <div class="path">~/puller</div>
+<div class="wrap">
+  <div class="bulbs"></div>
+  <div class="marquee">
+    <span class="brand">STUB</span>
+    <span class="admit">ADMIT ONE</span>
   </div>
+  <div class="perf"></div>
 
-  <div class="body">
-    <p class="comment"><span class="kw">//</span> paste a link — video site or direct file — and run it</p>
+  <div class="ticket">
+    <p class="tagline">Paste a link from any video site, or a direct file link. Pick a format and it's yours.</p>
 
-    <div class="prompt-row">
-      <span class="caret">$</span>
-      <input type="text" id="url" placeholder="https://..." autocomplete="off">
-      <button class="btn btn-run" id="loadBtn" onclick="fetchFormats()">run</button>
+    <div class="field-row">
+      <input type="text" id="url" placeholder="Paste your link" autocomplete="off">
+      <button class="btn btn-fetch" id="loadBtn" onclick="fetchFormats()">Fetch</button>
     </div>
 
     <div class="meta" id="meta"></div>
 
-    <div class="flags" id="kindToggle">
-      <button class="flag-btn active" id="videoTab" onclick="switchKind('video')">--video</button>
-      <button class="flag-btn" id="audioTab" onclick="switchKind('audio')">--audio</button>
+    <div class="switches" id="kindToggle">
+      <div class="switch-group">
+        <button class="switch-btn active" id="videoTab" onclick="switchKind('video')">Video</button>
+        <button class="switch-btn" id="audioTab" onclick="switchKind('audio')">Audio only</button>
+      </div>
     </div>
 
-    <div class="flags" id="compressToggle">
-      <button class="flag-btn active" id="compressOriginal" onclick="switchCompress('original')">--raw</button>
-      <button class="flag-btn" id="compressBalanced" onclick="switchCompress('balanced')">--balanced</button>
-      <button class="flag-btn" id="compressSmaller" onclick="switchCompress('smaller')">--small</button>
+    <div class="switches" id="compressToggle">
+      <div class="switch-group">
+        <button class="switch-btn active" id="compressOriginal" onclick="switchCompress('original')">Original</button>
+        <button class="switch-btn" id="compressBalanced" onclick="switchCompress('balanced')">Balanced</button>
+        <button class="switch-btn" id="compressSmaller" onclick="switchCompress('smaller')">Smaller</button>
+      </div>
     </div>
 
     <div class="results" id="results"></div>
 
     <div class="progress-box" id="progressBox">
-      <div class="progress-line" id="progressLine">starting…</div>
+      <div class="progress-line" id="progressLine">Starting…</div>
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
       <div class="progress-pct" id="progressPct">0%</div>
     </div>
@@ -476,7 +486,7 @@ PAGE = """
   </div>
 </div>
 
-<p class="credit">built by <span>الشيخ قطة</span></p>
+<p class="credit">Made by <span>الشيخ قطة</span></p>
 
 <script>
 const el = id => document.getElementById(id);
@@ -500,10 +510,10 @@ async function fetchFormats() {
   el('kindToggle').style.display = 'none';
   el('compressToggle').style.display = 'none';
 
-  if (!url) { showResult(false, 'paste a link first.'); return; }
+  if (!url) { showResult(false, 'Paste a link first.'); return; }
 
   loadBtn.disabled = true;
-  loadBtn.textContent = 'reading…';
+  loadBtn.textContent = 'Reading…';
   try {
     const res = await fetch('/formats', {
       method: 'POST',
@@ -538,10 +548,10 @@ async function fetchFormats() {
       renderResults();
     }
   } catch (e) {
-    showResult(false, 'could not reach that source — check the link and try again.');
+    showResult(false, 'Could not reach that source — check the link and try again.');
   } finally {
     loadBtn.disabled = false;
-    loadBtn.textContent = 'run';
+    loadBtn.textContent = 'Fetch';
   }
 }
 
@@ -573,7 +583,7 @@ function renderResults() {
   if (!items.length) {
     const row = document.createElement('div');
     row.className = 'result-row';
-    row.innerHTML = `<div class="result-spec">no ${activeKind} formats available for this source.</div>`;
+    row.innerHTML = `<span class="label">No ${activeKind} formats available for this source.</span>`;
     list.appendChild(row);
     list.style.display = 'flex';
     return;
@@ -582,16 +592,16 @@ function renderResults() {
   items.forEach(f => {
     const row = document.createElement('div');
     row.className = 'result-row';
-    const resText = activeKind === 'video' ? f.resolution : (f.abr ? f.abr + 'kbps' : 'audio');
+    const resText = activeKind === 'video' ? f.resolution : (f.abr ? f.abr + ' kbps' : 'Audio');
     const badge = activeKind === 'video' ? 'mp4' : f.ext;
     const noteText = (activeKind === 'video' && f.codec_note) ? f.codec_note.replace(' · ', '') : '';
     const sizeText = f.size ? `${f.size_approx ? '~' : ''}${f.size}` : 'size unknown';
     row.innerHTML = `
-      <div class="result-spec">
-        <span class="ext">${badge}</span><span class="res">${resText}</span>${noteText ? `<span class="note">${noteText}</span>` : ''}
-        <span class="size">${sizeText}</span>
-      </div>
-      <button class="btn btn-get">get</button>
+      <span class="label">${resText}</span>
+      ${noteText ? `<span class="note">${noteText}</span>` : ''}
+      <span class="leader"></span>
+      <span class="size">${sizeText} · ${badge}</span>
+      <button class="btn btn-get">Get</button>
     `;
     row.querySelector('button').addEventListener('click', () =>
       startDownload(currentUrl, f.format_id, f.has_audio, activeKind, currentTitle, null,
@@ -607,14 +617,13 @@ function renderDirectResult() {
   const row = document.createElement('div');
   row.className = 'result-row';
   const badge = (directFormat.ext || 'file').toLowerCase();
-  const resText = directFormat.label || 'direct file';
+  const resText = directFormat.label || 'Direct file';
   const sizeText = directFormat.size ? `${directFormat.size_approx ? '~' : ''}${directFormat.size}` : 'size unknown';
   row.innerHTML = `
-    <div class="result-spec">
-      <span class="ext">${badge}</span><span class="res">${resText}</span>
-      <span class="size">${sizeText}</span>
-    </div>
-    <button class="btn btn-get">get</button>
+    <span class="label">${resText}</span>
+    <span class="leader"></span>
+    <span class="size">${sizeText} · ${badge}</span>
+    <button class="btn btn-get">Get</button>
   `;
   row.querySelector('button').addEventListener('click', () =>
     startDownload(currentUrl, '__direct__', false, 'direct', currentTitle, directFormat.ext, 'original', null));
@@ -625,7 +634,7 @@ function renderDirectResult() {
 async function startDownload(url, formatId, hasAudio, kind, title, ext, compress, clientMode) {
   el('resultNote').style.display = 'none';
   el('progressBox').style.display = 'block';
-  el('progressLine').textContent = 'starting…';
+  el('progressLine').textContent = 'Starting…';
   el('progressFill').style.width = '0%';
   el('progressPct').textContent = '0%';
 
@@ -639,7 +648,7 @@ async function startDownload(url, formatId, hasAudio, kind, title, ext, compress
     if (data.error) { finishProgress(false, data.error); return; }
     pollProgress(data.job_id);
   } catch (e) {
-    finishProgress(false, 'could not start the download.');
+    finishProgress(false, 'Could not start the download.');
   }
 }
 
@@ -649,15 +658,15 @@ function pollProgress(jobId) {
     const data = await res.json();
     if (data.status === 'downloading') {
       const pctText = (data.percent || '0%').trim();
-      el('progressLine').textContent = 'downloading…';
+      el('progressLine').textContent = 'Downloading…';
       el('progressPct').textContent = pctText;
       const num = parseFloat(pctText);
       if (!isNaN(num)) el('progressFill').style.width = num + '%';
     } else if (data.status === 'processing') {
-      el('progressLine').textContent = 'finishing up…';
+      el('progressLine').textContent = 'Finishing up…';
     } else if (data.status === 'compressing') {
       const pctText = (data.percent || '').trim();
-      el('progressLine').textContent = 'compressing…';
+      el('progressLine').textContent = 'Compressing…';
       el('progressPct').textContent = pctText || '…';
       const num = parseFloat(pctText);
       if (!isNaN(num)) el('progressFill').style.width = num + '%';
@@ -684,7 +693,7 @@ function showResult(ok, message, downloadUrl) {
   r.innerHTML = '';
 
   const text = document.createElement('span');
-  text.textContent = (ok ? 'saved: ' : 'error: ') + message;
+  text.textContent = (ok ? 'Saved as ' : 'Error: ') + message;
   r.appendChild(text);
 
   if (ok && downloadUrl) {
