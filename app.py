@@ -74,32 +74,48 @@ if _cookies_env and not Path(COOKIES_FILE).exists():
         pass
 
 
-def base_ydl_opts():
+def client_opts(mode):
+    """yt-dlp options for a specific client mode. 'auth' uses cookies plus
+    the client list that works with a logged-in session; 'anon' uses no
+    cookies plus the client list that avoids the anonymous bot wall.
+    Format IDs are only valid within the client mode that produced them,
+    so whichever mode lists the formats must be the same mode that later
+    downloads them."""
+    if mode == "auth" and Path(COOKIES_FILE).exists():
+        return {
+            "extractor_args": {"youtube": {"player_client": YOUTUBE_PLAYER_CLIENTS_AUTH}},
+            "cookiefile": COOKIES_FILE,
+        }
+    return {"extractor_args": {"youtube": {"player_client": YOUTUBE_PLAYER_CLIENTS_ANON}}}
+
+
+def default_client_mode():
+    return "auth" if Path(COOKIES_FILE).exists() else "anon"
+
+
+def base_ydl_opts(mode=None):
     """Shared yt-dlp options that help avoid YouTube's bot-detection wall.
     Applied to both the format-listing call and the actual download."""
-    has_cookies = Path(COOKIES_FILE).exists()
-    clients = YOUTUBE_PLAYER_CLIENTS_AUTH if has_cookies else YOUTUBE_PLAYER_CLIENTS_ANON
-    opts = {"extractor_args": {"youtube": {"player_client": clients}}}
-    if has_cookies:
-        opts["cookiefile"] = COOKIES_FILE
-    return opts
+    return client_opts(mode or default_client_mode())
 
 
-def extract_with_fallback(ydl_opts, url, download):
+def extract_with_fallback(ydl_opts, url, download, mode=None):
     """Run yt-dlp's extract_info, and if it fails on the known
     "page needs to be reloaded" bug (tv_downgraded client, only hit when
     cookies are in play), retry once without cookies/auth so a public
-    video still gets through even while that upstream bug is unresolved."""
+    video still gets through even while that upstream bug is unresolved.
+    Returns (info, mode_used) so callers can keep later requests (like the
+    actual download) pinned to whichever client mode actually worked."""
+    mode = mode or default_client_mode()
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            return ydl.extract_info(url, download=download)
+            return ydl.extract_info(url, download=download), mode
     except Exception as e:
-        if "cookiefile" in ydl_opts and "reload" in str(e).lower():
-            fallback_opts = dict(ydl_opts)
+        if mode == "auth" and "reload" in str(e).lower():
+            fallback_opts = {**ydl_opts, **client_opts("anon")}
             fallback_opts.pop("cookiefile", None)
-            fallback_opts["extractor_args"] = {"youtube": {"player_client": YOUTUBE_PLAYER_CLIENTS_ANON}}
             with yt_dlp.YoutubeDL(fallback_opts) as ydl:
-                return ydl.extract_info(url, download=download)
+                return ydl.extract_info(url, download=download), "anon"
         raise
 
 # Lets yt-dlp pull fragmented (DASH/HLS) streams over several connections at
@@ -168,20 +184,20 @@ PAGE = """
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Puller</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0b0d12;
-    --panel: #12151c;
-    --panel-2: #181c26;
-    --edge: #262b38;
-    --accent: #5b8cff;
-    --accent-dim: #3a5bb8;
-    --text: #e9ebf1;
-    --muted: #8a90a3;
-    --muted-dim: #5c6178;
-    --success: #4fbf7a;
-    --error: #f0654f;
+    --bg: #100c0a;
+    --panel: #1a1411;
+    --panel-2: #211a16;
+    --edge: #34281f;
+    --accent: #ff7a45;
+    --accent-2: #ffb648;
+    --text: #f5ece3;
+    --muted: #a89584;
+    --muted-dim: #6e5c4d;
+    --success: #6fbf7a;
+    --error: #ef6a55;
   }
 
   * { box-sizing: border-box; }
@@ -189,14 +205,16 @@ PAGE = """
   body {
     margin: 0;
     background: var(--bg);
-    background-image: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(91,140,255,0.10), transparent 60%);
+    background-image:
+      radial-gradient(ellipse 800px 460px at 15% -8%, rgba(255,122,69,0.14), transparent 60%),
+      radial-gradient(ellipse 700px 420px at 100% 10%, rgba(255,182,72,0.08), transparent 55%);
     color: var(--text);
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
   }
 
-  ::selection { background: rgba(91,140,255,0.35); color: var(--text); }
+  ::selection { background: rgba(255,122,69,0.35); color: var(--text); }
 
   .site-header {
     display: flex;
@@ -208,14 +226,18 @@ PAGE = """
   }
 
   .wordmark {
-    font-size: 16px;
-    font-weight: 700;
+    font-family: 'Sora', sans-serif;
+    font-size: 17px;
+    font-weight: 800;
     letter-spacing: -0.2px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 9px;
   }
-  .wordmark .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .wordmark .dot {
+    width: 9px; height: 9px; border-radius: 3px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
 
   .hero {
     max-width: 640px;
@@ -225,13 +247,19 @@ PAGE = """
   }
 
   h1 {
+    font-family: 'Sora', sans-serif;
     font-weight: 700;
-    font-size: clamp(28px, 4.6vw, 40px);
-    line-height: 1.15;
+    font-size: clamp(28px, 4.6vw, 42px);
+    line-height: 1.12;
     margin: 0 0 12px;
-    letter-spacing: -0.6px;
+    letter-spacing: -0.7px;
   }
-  h1 span { color: var(--accent); }
+  h1 span {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 
   .hero p {
     color: var(--muted);
@@ -244,7 +272,7 @@ PAGE = """
   .panel {
     max-width: 600px;
     margin: 0 auto;
-    padding: 0 24px 64px;
+    padding: 0 24px 40px;
   }
 
   .input-row {
@@ -252,7 +280,7 @@ PAGE = """
     gap: 8px;
     background: var(--panel);
     border: 1px solid var(--edge);
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 6px 6px 6px 18px;
     transition: border-color 0.15s ease;
   }
@@ -272,7 +300,7 @@ PAGE = """
 
   .btn {
     border: none;
-    border-radius: 8px;
+    border-radius: 9px;
     font-family: 'Inter', sans-serif;
     font-weight: 600;
     font-size: 14px;
@@ -283,11 +311,11 @@ PAGE = """
   .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .btn-primary {
-    background: var(--accent);
-    color: #08101f;
-    padding: 11px 22px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #1a0d05;
+    padding: 11px 24px;
   }
-  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 
   .btn-pull {
     background: var(--panel-2);
@@ -297,7 +325,7 @@ PAGE = """
     white-space: nowrap;
     border: 1px solid var(--edge);
   }
-  .btn-pull:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn-pull:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-2); }
 
   .meta {
     display: none;
@@ -323,7 +351,7 @@ PAGE = """
     background: var(--panel);
     border: 1px solid var(--edge);
     color: var(--muted);
-    border-radius: 8px;
+    border-radius: 9px;
     padding: 10px;
     font-family: 'Inter', sans-serif;
     font-weight: 600;
@@ -379,7 +407,7 @@ PAGE = """
     gap: 12px;
     background: var(--panel);
     border: 1px solid var(--edge);
-    border-radius: 8px;
+    border-radius: 9px;
     padding: 11px 14px;
     transition: border-color 0.15s ease;
   }
@@ -396,10 +424,10 @@ PAGE = """
     min-width: 0;
   }
   .result-spec .ext {
-    color: var(--accent);
+    color: var(--accent-2);
     text-transform: uppercase;
     font-weight: 600;
-    background: rgba(91,140,255,0.1);
+    background: rgba(255,122,69,0.12);
     padding: 3px 7px;
     border-radius: 4px;
     flex-shrink: 0;
@@ -413,7 +441,7 @@ PAGE = """
     margin-top: 16px;
     background: var(--panel);
     border: 1px solid var(--edge);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 16px;
   }
 
@@ -435,14 +463,14 @@ PAGE = """
   .progress-track { height: 5px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
   .progress-fill {
     height: 100%; width: 0%;
-    background: var(--accent);
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
     transition: width 0.4s ease;
     border-radius: 3px;
   }
   .progress-pct {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 13px;
-    color: var(--accent);
+    color: var(--accent-2);
     width: 56px;
     text-align: right;
     flex-shrink: 0;
@@ -453,16 +481,28 @@ PAGE = """
     display: none;
     align-items: center;
     gap: 10px;
-    border-radius: 8px;
+    border-radius: 9px;
     padding: 12px 15px;
     font-size: 13px;
     font-weight: 500;
   }
-  .result-note.ok { background: rgba(79,191,122,0.1); border: 1px solid rgba(79,191,122,0.3); color: var(--success); }
-  .result-note.err { background: rgba(240,101,79,0.1); border: 1px solid rgba(240,101,79,0.3); color: var(--error); }
+  .result-note.ok { background: rgba(111,191,122,0.12); border: 1px solid rgba(111,191,122,0.3); color: var(--success); }
+  .result-note.err { background: rgba(239,106,85,0.12); border: 1px solid rgba(239,106,85,0.3); color: var(--error); }
+
+  footer {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px 24px 40px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    color: var(--muted-dim);
+  }
+  footer span { color: var(--accent-2); }
 
   @media (max-width: 560px) {
-    .input-row { flex-direction: column; border-radius: 14px; padding: 12px; }
+    .input-row { flex-direction: column; border-radius: 16px; padding: 12px; }
     .input-row input { padding: 6px 4px; }
     .btn-primary { width: 100%; }
     .result-row { flex-wrap: wrap; }
@@ -515,10 +555,13 @@ PAGE = """
   <div class="result-note" id="resultNote"></div>
 </div>
 
+<footer>Built by <span>الشيخ قطة</span></footer>
+
 <script>
 const el = id => document.getElementById(id);
 let currentUrl = '';
 let currentTitle = '';
+let currentClientMode = null;
 let videoFormats = [];
 let audioFormats = [];
 let activeKind = 'video';
@@ -556,6 +599,7 @@ async function fetchFormats() {
 
     currentUrl = url;
     currentTitle = data.title || '';
+    currentClientMode = data.client_mode || null;
     isDirect = !!data.is_direct;
 
     if (isDirect) {
@@ -617,7 +661,7 @@ function renderResults() {
   items.forEach(f => {
     const row = document.createElement('div');
     row.className = 'result-row';
-    const specText = activeKind === 'video' ? f.resolution : (f.abr ? f.abr + ' kbps' : 'audio');
+    const specText = activeKind === 'video' ? f.resolution + (f.codec_note || '') : (f.abr ? f.abr + ' kbps' : 'audio');
     const badge = activeKind === 'video' ? 'MP4' : f.ext;
     const sizeText = f.size ? `<span>${f.size_approx ? '~' : ''}${f.size}</span>` : '<span>Size unknown</span>';
     row.innerHTML = `
@@ -626,7 +670,7 @@ function renderResults() {
     `;
     row.querySelector('button').addEventListener('click', () =>
       startDownload(currentUrl, f.format_id, f.has_audio, activeKind, currentTitle, null,
-        activeKind === 'video' ? compressLevel : 'original'));
+        activeKind === 'video' ? compressLevel : 'original', currentClientMode));
     list.appendChild(row);
   });
   list.style.display = 'flex';
@@ -645,12 +689,12 @@ function renderDirectResult() {
     <button class="btn btn-pull">Pull</button>
   `;
   row.querySelector('button').addEventListener('click', () =>
-    startDownload(currentUrl, '__direct__', false, 'direct', currentTitle, directFormat.ext, 'original'));
+    startDownload(currentUrl, '__direct__', false, 'direct', currentTitle, directFormat.ext, 'original', null));
   list.appendChild(row);
   list.style.display = 'flex';
 }
 
-async function startDownload(url, formatId, hasAudio, kind, title, ext, compress) {
+async function startDownload(url, formatId, hasAudio, kind, title, ext, compress, clientMode) {
   el('resultNote').style.display = 'none';
   el('progressBox').style.display = 'flex';
   el('progressLine').textContent = 'Starting…';
@@ -661,7 +705,7 @@ async function startDownload(url, formatId, hasAudio, kind, title, ext, compress
     const res = await fetch('/download', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({url, format_id: formatId, has_audio: hasAudio, kind: kind, title: title, ext: ext, compress: compress || 'original'})
+      body: JSON.stringify({url, format_id: formatId, has_audio: hasAudio, kind: kind, title: title, ext: ext, compress: compress || 'original', client_mode: clientMode})
     });
     const data = await res.json();
     if (data.error) { finishProgress(false, data.error); return; }
@@ -864,7 +908,7 @@ def formats():
             "noplaylist": True,
             "socket_timeout": 15,
         }
-        info = extract_with_fallback(ydl_opts, url, download=False)
+        info, client_mode = extract_with_fallback(ydl_opts, url, download=False)
         all_formats = info.get("formats") or [info]
         duration = info.get("duration")
 
@@ -879,7 +923,16 @@ def formats():
         if audio_only:
             best_audio_bytes, best_audio_approx = estimate_video_size_bytes(audio_only[0], duration)
 
-        video_merged.sort(key=lambda f: f.get("tbr") or 0, reverse=True)
+        # Sort so that, at each resolution, an H.264 (avc1) stream is
+        # picked over VP9/AV1 when both exist. H.264 plays reliably in
+        # mobile editing apps (CapCut, InShot, VN, etc.); VP9/AV1 — which
+        # is what YouTube serves by default at 1080p+ — often doesn't
+        # open cleanly in them, which is the "1080p downloads don't work
+        # on mobile" symptom.
+        def is_h264(f):
+            return (f.get("vcodec") or "").startswith(("avc1", "h264"))
+
+        video_merged.sort(key=lambda f: (is_h264(f), f.get("tbr") or 0), reverse=True)
         seen_heights = set()
         video_result = []
         for f in video_merged:
@@ -903,6 +956,7 @@ def formats():
                 "ext": "mp4",
                 "resolution": label,
                 "has_audio": has_audio,
+                "codec_note": "" if is_h264(f) else " · may not open in some mobile editors",
                 "size": format_size(size_bytes),
                 "size_approx": is_approx,
             })
@@ -934,6 +988,7 @@ def formats():
             "is_direct": False,
             "video_formats": video_result,
             "audio_formats": audio_result,
+            "client_mode": client_mode,
         })
     except Exception as e:
         direct = probe_direct_url(url)
@@ -1032,7 +1087,7 @@ def compress_video(input_path, output_path, preset_name, job_id, duration=None):
         raise RuntimeError("Compression failed (ffmpeg error).")
 
 
-def run_download(job_id, url, format_id, has_audio, kind, output_path, compress="original"):
+def run_download(job_id, url, format_id, has_audio, kind, output_path, compress="original", client_mode=None):
     def progress_hook(d):
         if d["status"] == "downloading":
             percent = d.get("_percent_str", "").strip()
@@ -1043,8 +1098,11 @@ def run_download(job_id, url, format_id, has_audio, kind, output_path, compress=
     stem = str(output_path.with_suffix(""))
     outtmpl = f"{stem}.%(ext)s"
 
+    # Pinned to the exact client mode that produced this format_id (see
+    # /formats), since a format ID from one YouTube client isn't
+    # necessarily valid to request from another.
     common_opts = {
-        **base_ydl_opts(),
+        **base_ydl_opts(client_mode),
         "outtmpl": outtmpl,
         "noplaylist": True,
         "ignoreerrors": True,
@@ -1076,7 +1134,7 @@ def run_download(job_id, url, format_id, has_audio, kind, output_path, compress=
                 "postprocessors": [{"key": "FFmpegVideoConvertor", "preferedformat": "mp4"}],
             }
 
-        extract_with_fallback(ydl_opts, url, download=True)
+        extract_with_fallback(ydl_opts, url, download=True, mode=client_mode)
 
         if kind == "video" and compress != "original" and output_path.exists():
             set_job(job_id, {"status": "compressing", "percent": ""})
@@ -1144,6 +1202,9 @@ def download():
     compress = data.get("compress", "original")
     if compress not in COMPRESS_PRESETS:
         compress = "original"
+    client_mode = data.get("client_mode")
+    if client_mode not in ("auth", "anon"):
+        client_mode = None
     if not url or not format_id:
         return jsonify({"error": "Missing data."}), 400
 
@@ -1157,7 +1218,7 @@ def download():
     else:
         ext = "mp3" if kind == "audio" else "mp4"
         output_path = unique_output_path(title or "video", ext)
-        EXECUTOR.submit(run_download, job_id, url, format_id, has_audio, kind, output_path, compress)
+        EXECUTOR.submit(run_download, job_id, url, format_id, has_audio, kind, output_path, compress, client_mode)
 
     return jsonify({"job_id": job_id})
 
