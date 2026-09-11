@@ -51,10 +51,10 @@ TARGET_AUDIO_KBPS = 192
 #     videos (see yt-dlp issues #17389 / #17405, both still open as of
 #     Aug 2026). Explicitly excluding it and falling back to default +
 #     web_embedded is the best known workaround right now, but this is a
-#     moving target — YouTube changes this often enough that no client
-#     list is guaranteed to keep working.
-YOUTUBE_PLAYER_CLIENTS_ANON = ["tv", "web_safari"]
-YOUTUBE_PLAYER_CLIENTS_AUTH = ["default", "-tv_downgraded", "web_embedded"]
+#     moving target — YouTube changes this often enough that no single
+#     client list is guaranteed to keep working, which is why several
+#     strategies are tried in order below rather than just one.
+YOUTUBE_STRATEGY_ORDER = ["auth", "tv", "mweb", "web"]
 
 # Optional: path to a cookies.txt file (Netscape format) exported from a
 # real, signed-in YouTube session. If present, it's used as a fallback for
@@ -74,49 +74,49 @@ if _cookies_env and not Path(COOKIES_FILE).exists():
         pass
 
 
-def client_opts(mode):
-    """yt-dlp options for a specific client mode. 'auth' uses cookies plus
-    the client list that works with a logged-in session; 'anon' uses no
-    cookies plus the client list that avoids the anonymous bot wall.
-    Format IDs are only valid within the client mode that produced them,
-    so whichever mode lists the formats must be the same mode that later
-    downloads them."""
-    if mode == "auth" and Path(COOKIES_FILE).exists():
+def client_opts_for(mode):
+    """yt-dlp option fragment for one named strategy, or None if that
+    strategy isn't usable right now (e.g. 'auth' with no cookies file).
+    Format IDs are only valid within the strategy that produced them, so
+    whichever one lists the formats must be the same one that later
+    downloads them — see extract_with_fallback."""
+    if mode == "auth":
+        if not Path(COOKIES_FILE).exists():
+            return None
         return {
-            "extractor_args": {"youtube": {"player_client": YOUTUBE_PLAYER_CLIENTS_AUTH}},
+            "extractor_args": {"youtube": {"player_client": ["default", "-tv_downgraded", "web_embedded"]}},
             "cookiefile": COOKIES_FILE,
         }
-    return {"extractor_args": {"youtube": {"player_client": YOUTUBE_PLAYER_CLIENTS_ANON}}}
+    if mode == "tv":
+        return {"extractor_args": {"youtube": {"player_client": ["tv", "web_safari"]}}}
+    if mode == "mweb":
+        return {"extractor_args": {"youtube": {"player_client": ["mweb"]}}}
+    if mode == "web":
+        return {"extractor_args": {"youtube": {"player_client": ["web"]}}}
+    return None
 
 
-def default_client_mode():
-    return "auth" if Path(COOKIES_FILE).exists() else "anon"
-
-
-def base_ydl_opts(mode=None):
-    """Shared yt-dlp options that help avoid YouTube's bot-detection wall.
-    Applied to both the format-listing call and the actual download."""
-    return client_opts(mode or default_client_mode())
-
-
-def extract_with_fallback(ydl_opts, url, download, mode=None):
-    """Run yt-dlp's extract_info, and if it fails on the known
-    "page needs to be reloaded" bug (tv_downgraded client, only hit when
-    cookies are in play), retry once without cookies/auth so a public
-    video still gets through even while that upstream bug is unresolved.
-    Returns (info, mode_used) so callers can keep later requests (like the
-    actual download) pinned to whichever client mode actually worked."""
-    mode = mode or default_client_mode()
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            return ydl.extract_info(url, download=download), mode
-    except Exception as e:
-        if mode == "auth" and "reload" in str(e).lower():
-            fallback_opts = {**ydl_opts, **client_opts("anon")}
-            fallback_opts.pop("cookiefile", None)
-            with yt_dlp.YoutubeDL(fallback_opts) as ydl:
-                return ydl.extract_info(url, download=download), "anon"
-        raise
+def extract_with_fallback(base_opts, url, download, preferred_mode=None):
+    """Run yt-dlp's extract_info, trying client strategies in order until
+    one works. If preferred_mode is given (the actual download, once
+    /formats already found a working strategy), only that one is tried —
+    a format_id from one client isn't necessarily valid on another.
+    Returns (info, mode_used) so callers can pin later requests to
+    whichever strategy actually succeeded."""
+    order = [preferred_mode] if preferred_mode else YOUTUBE_STRATEGY_ORDER
+    last_err = None
+    for mode in order:
+        fragment = client_opts_for(mode)
+        if fragment is None:
+            continue
+        ydl_opts = {**base_opts, **fragment}
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                return ydl.extract_info(url, download=download), mode
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err or RuntimeError("No extraction strategy was available.")
 
 # Lets yt-dlp pull fragmented (DASH/HLS) streams over several connections at
 # once instead of one fragment at a time — the single biggest download-speed
@@ -204,6 +204,7 @@ PAGE = """
   body {
     margin: 0;
     background: var(--bg);
+    background-image: radial-gradient(ellipse 640px 360px at 50% -6%, rgba(201,162,77,0.10), transparent 65%);
     color: var(--ink);
     font-family: 'Manrope', sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -216,6 +217,15 @@ PAGE = """
   .wrap { max-width: 520px; margin: 0 auto; }
 
   .lede { text-align: center; margin-bottom: 32px; }
+  .lede .mark {
+    width: 34px; height: 34px;
+    margin: 0 auto 16px;
+    border-radius: 9px;
+    background: linear-gradient(155deg, var(--accent), #8a6c2e);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px -8px rgba(201,162,77,0.5);
+  }
+  .lede .mark svg { width: 16px; height: 16px; }
   .lede h1 {
     font-weight: 800;
     font-size: clamp(26px, 4.2vw, 34px);
@@ -230,29 +240,45 @@ PAGE = """
   }
 
   .card {
+    position: relative;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 22px;
-    box-shadow: 0 16px 40px -24px rgba(0,0,0,0.6);
+    padding: 23px 22px 22px;
+    box-shadow: 0 20px 48px -26px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,162,77,0.04);
+    overflow: hidden;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.7;
   }
 
-  .field-row { display: flex; gap: 10px; }
+  .field-row {
+    display: flex;
+    gap: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 5px 5px 5px 16px;
+    transition: border-color 0.15s ease;
+  }
+  .field-row:focus-within { border-color: var(--accent); }
 
   .field-row input {
     flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    background: transparent;
+    border: none;
     color: var(--ink);
     font-family: 'Manrope', sans-serif;
     font-size: 15px;
-    padding: 13px 15px;
+    padding: 12px 0;
     outline: none;
-    transition: border-color 0.15s ease, background 0.15s ease;
   }
   .field-row input::placeholder { color: var(--muted-soft); }
-  .field-row input:focus { border-color: var(--accent); background: var(--surface); }
 
   .btn {
     border: none;
@@ -269,7 +295,8 @@ PAGE = """
   .btn-primary {
     background: var(--accent);
     color: #1a1408;
-    padding: 13px 22px;
+    border-radius: 8px;
+    padding: 11px 20px;
     white-space: nowrap;
   }
   .btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
@@ -398,6 +425,13 @@ PAGE = """
 
 <div class="wrap">
   <div class="lede">
+    <div class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1a1408" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v13"/>
+        <path d="M6 11l6 6 6-6"/>
+        <path d="M5 21h14"/>
+      </svg>
+    </div>
     <h1>Get the file, not the fuss.</h1>
     <p>Paste a link from any video site, or a direct file link. Pick a format and it's yours.</p>
   </div>
@@ -783,7 +817,6 @@ def formats():
 
     try:
         ydl_opts = {
-            **base_ydl_opts(),
             "quiet": True,
             "no_warnings": True,
             "noplaylist": True,
@@ -979,11 +1012,10 @@ def run_download(job_id, url, format_id, has_audio, kind, output_path, compress=
     stem = str(output_path.with_suffix(""))
     outtmpl = f"{stem}.%(ext)s"
 
-    # Pinned to the exact client mode that produced this format_id (see
-    # /formats), since a format ID from one YouTube client isn't
-    # necessarily valid to request from another.
+    # Client strategy is applied by extract_with_fallback below, pinned to
+    # whichever one produced this format_id in /formats — a format ID from
+    # one YouTube client isn't necessarily valid to request from another.
     common_opts = {
-        **base_ydl_opts(client_mode),
         "outtmpl": outtmpl,
         "noplaylist": True,
         "ignoreerrors": True,
@@ -1015,7 +1047,7 @@ def run_download(job_id, url, format_id, has_audio, kind, output_path, compress=
                 "postprocessors": [{"key": "FFmpegVideoConvertor", "preferedformat": "mp4"}],
             }
 
-        extract_with_fallback(ydl_opts, url, download=True, mode=client_mode)
+        extract_with_fallback(ydl_opts, url, download=True, preferred_mode=client_mode)
 
         if kind == "video" and compress != "original" and output_path.exists():
             set_job(job_id, {"status": "compressing", "percent": ""})
@@ -1084,7 +1116,7 @@ def download():
     if compress not in COMPRESS_PRESETS:
         compress = "original"
     client_mode = data.get("client_mode")
-    if client_mode not in ("auth", "anon"):
+    if client_mode not in YOUTUBE_STRATEGY_ORDER:
         client_mode = None
     if not url or not format_id:
         return jsonify({"error": "Missing data."}), 400
