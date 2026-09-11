@@ -182,20 +182,21 @@ PAGE = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stub</title>
+<title>Pull</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #14171f;
-    --ticket: #1d212b;
-    --ticket-edge: #333a4a;
-    --gold: #e8b64b;
-    --gold-dim: #a9853c;
-    --red: #c1443c;
-    --ivory: #f2ead9;
-    --muted: #9b917f;
-    --muted-dim: #66604f;
+    --bg: #f1efe9;
+    --surface: #ffffff;
+    --border: #e3ddd0;
+    --ink: #23261f;
+    --muted: #756f61;
+    --muted-soft: #9a9384;
+    --accent: #3d5c43;
+    --accent-soft: #e9efe6;
+    --error: #b3453c;
+    --error-soft: #f7e9e7;
   }
 
   * { box-sizing: border-box; }
@@ -203,118 +204,83 @@ PAGE = """
   body {
     margin: 0;
     background: var(--bg);
-    color: var(--ivory);
-    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--ink);
+    font-family: 'Manrope', sans-serif;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
-    padding: 44px 16px 60px;
+    padding: 64px 20px;
   }
 
-  ::selection { background: rgba(232,182,75,0.3); color: var(--ivory); }
+  ::selection { background: var(--accent-soft); color: var(--accent); }
 
-  .wrap { max-width: 560px; margin: 0 auto; }
+  .wrap { max-width: 520px; margin: 0 auto; }
 
-  .bulbs {
-    height: 12px;
-    background-image: radial-gradient(circle, var(--gold) 2.4px, transparent 2.8px);
-    background-size: 22px 12px;
-    background-repeat: repeat-x;
-    background-position: center;
-    margin-bottom: -1px;
+  .lede { text-align: center; margin-bottom: 32px; }
+  .lede h1 {
+    font-weight: 800;
+    font-size: clamp(26px, 4.2vw, 34px);
+    letter-spacing: -0.5px;
+    margin: 0 0 10px;
   }
-
-  .marquee {
-    background: var(--gold);
-    color: #241a06;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding: 12px 22px 10px;
-    border-radius: 10px 10px 0 0;
-  }
-  .marquee .brand {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 3px;
-  }
-  .marquee .admit {
-    font-size: 11px;
-    letter-spacing: 1.5px;
-    color: #5c4315;
-  }
-
-  .perf {
-    height: 17px;
-    background-image: radial-gradient(circle, var(--bg) 7px, transparent 7.3px);
-    background-size: 26px 17px;
-    background-repeat: repeat-x;
-    background-position: center top;
-    background-color: var(--gold);
-  }
-
-  .ticket {
-    background: var(--ticket);
-    border: 1px solid var(--ticket-edge);
-    border-top: none;
-    border-radius: 0 0 10px 10px;
-    padding: 26px 26px 22px;
-  }
-
-  .tagline {
+  .lede p {
     color: var(--muted);
-    font-size: 14.5px;
-    margin: 0 0 22px;
-    line-height: 1.5;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
   }
 
-  .field-row {
-    display: flex;
-    gap: 10px;
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 16px 40px -24px rgba(35,38,31,0.25);
   }
+
+  .field-row { display: flex; gap: 10px; }
 
   .field-row input {
     flex: 1;
     background: var(--bg);
-    border: 1px solid var(--ticket-edge);
-    border-radius: 7px;
-    color: var(--ivory);
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 14.5px;
-    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--ink);
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    padding: 13px 15px;
     outline: none;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
-  .field-row input::placeholder { color: var(--muted-dim); }
-  .field-row input:focus { border-color: var(--gold); }
+  .field-row input::placeholder { color: var(--muted-soft); }
+  .field-row input:focus { border-color: var(--accent); background: var(--surface); }
 
   .btn {
     border: none;
-    border-radius: 7px;
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
+    border-radius: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 14.5px;
     cursor: pointer;
-    transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease;
+    transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  .btn-fetch {
-    background: var(--gold);
-    color: #241a06;
-    padding: 12px 20px;
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    padding: 13px 22px;
     white-space: nowrap;
   }
-  .btn-fetch:hover:not(:disabled) { filter: brightness(1.08); }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
 
   .btn-get {
-    background: transparent;
-    border: 1px solid var(--ticket-edge);
-    color: var(--ivory);
-    padding: 6px 14px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 8px 16px;
     font-size: 13px;
   }
-  .btn-get:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+  .btn-get:hover:not(:disabled) { filter: brightness(0.97); }
 
   .meta {
     display: none;
@@ -326,114 +292,103 @@ PAGE = """
     white-space: nowrap;
   }
 
-  .switches {
-    display: none;
-    gap: 18px;
-    margin-top: 22px;
-    padding-top: 18px;
-    border-top: 1px dashed var(--ticket-edge);
-  }
-  .switch-group { display: flex; gap: 6px; }
+  .switches { display: none; gap: 8px; margin-top: 20px; }
   .switch-btn {
-    background: transparent;
-    border: 1px solid var(--ticket-edge);
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
     color: var(--muted);
-    border-radius: 999px;
-    padding: 6px 14px;
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 12.5px;
-    font-weight: 500;
+    border-radius: 10px;
+    padding: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
     cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
-  .switch-btn.active { background: rgba(232,182,75,0.12); border-color: var(--gold); color: var(--gold); }
-  .switch-btn:hover:not(.active) { color: var(--ivory); }
-  .switch-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .switch-btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .switch-btn:hover:not(.active) { border-color: var(--muted-soft); }
+  .switch-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  #compressToggle .switch-btn { flex: initial; padding: 8px 15px; border-radius: 999px; font-size: 13px; }
 
   .results {
-    margin-top: 18px;
+    margin-top: 20px;
     display: none;
     flex-direction: column;
-    gap: 2px;
   }
 
   .result-row {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-    padding: 10px 0;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 0;
+    border-top: 1px solid var(--border);
   }
-  .result-row .label { font-size: 14.5px; color: var(--ivory); flex-shrink: 0; }
-  .result-row .note { font-size: 11.5px; color: var(--muted-dim); flex-shrink: 0; }
-  .result-row .leader {
-    flex: 1;
-    overflow: hidden;
-    white-space: nowrap;
-    color: var(--muted-dim);
-    font-size: 13px;
-  }
-  .result-row .leader::after {
-    content: " . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ";
-  }
-  .result-row .size { font-size: 13px; color: var(--muted); flex-shrink: 0; }
+  .result-row:last-child { padding-bottom: 2px; }
 
-  .progress-box {
-    display: none;
-    margin-top: 18px;
-    padding-top: 18px;
-    border-top: 1px dashed var(--ticket-edge);
+  .result-row .label { font-size: 14.5px; font-weight: 600; color: var(--ink); flex-shrink: 0; }
+  .result-row .note { font-size: 11.5px; color: var(--muted-soft); }
+  .result-row .size {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--muted);
+    flex-shrink: 0;
   }
+
+  .progress-box { display: none; margin-top: 20px; }
   .progress-line { font-size: 13.5px; color: var(--muted); margin-bottom: 10px; }
   .progress-track {
     height: 8px;
     background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 999px;
     overflow: hidden;
   }
   .progress-fill {
     height: 100%; width: 0%;
-    background: var(--gold);
+    background: var(--accent);
     transition: width 0.4s ease;
     border-radius: 999px;
   }
   .progress-pct { font-size: 12px; color: var(--muted); margin-top: 6px; text-align: right; }
 
   .result-note {
-    margin-top: 18px;
-    padding-top: 18px;
-    border-top: 1px dashed var(--ticket-edge);
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: 10px;
     display: none;
     align-items: center;
     gap: 12px;
-    font-size: 14px;
+    font-size: 13.5px;
+    font-weight: 600;
   }
-  .result-note.ok { color: var(--gold); }
-  .result-note.err { color: var(--red); }
+  .result-note.ok { background: var(--accent-soft); color: var(--accent); }
+  .result-note.err { background: var(--error-soft); color: var(--error); }
   .result-note .get-link {
     margin-left: auto;
-    color: #241a06;
-    background: var(--gold);
+    color: #fff;
+    background: var(--accent);
     text-decoration: none;
-    border-radius: 7px;
-    padding: 7px 15px;
+    border-radius: 8px;
+    padding: 8px 16px;
     font-size: 13px;
-    font-weight: 600;
     flex-shrink: 0;
   }
-  .result-note .get-link:hover { filter: brightness(1.08); }
+  .result-note .get-link:hover { filter: brightness(1.1); }
 
   .credit {
     text-align: center;
-    margin: 18px auto 0;
-    color: var(--muted-dim);
-    font-size: 12px;
+    margin: 22px auto 0;
+    color: var(--muted-soft);
+    font-size: 12.5px;
   }
-  .credit span { color: var(--muted); }
+  .credit span { color: var(--muted); font-weight: 600; }
 
   @media (max-width: 560px) {
+    body { padding: 40px 14px; }
     .field-row { flex-direction: column; }
-    .btn-fetch { width: 100%; }
-    .marquee .brand { font-size: 24px; }
+    .btn-primary { width: 100%; }
     .result-note { flex-wrap: wrap; }
     .result-note .get-link { margin-left: 0; width: 100%; text-align: center; }
   }
@@ -442,36 +397,28 @@ PAGE = """
 <body>
 
 <div class="wrap">
-  <div class="bulbs"></div>
-  <div class="marquee">
-    <span class="brand">STUB</span>
-    <span class="admit">ADMIT ONE</span>
+  <div class="lede">
+    <h1>Get the file, not the fuss.</h1>
+    <p>Paste a link from any video site, or a direct file link. Pick a format and it's yours.</p>
   </div>
-  <div class="perf"></div>
 
-  <div class="ticket">
-    <p class="tagline">Paste a link from any video site, or a direct file link. Pick a format and it's yours.</p>
-
+  <div class="card">
     <div class="field-row">
       <input type="text" id="url" placeholder="Paste your link" autocomplete="off">
-      <button class="btn btn-fetch" id="loadBtn" onclick="fetchFormats()">Fetch</button>
+      <button class="btn btn-primary" id="loadBtn" onclick="fetchFormats()">Fetch</button>
     </div>
 
     <div class="meta" id="meta"></div>
 
     <div class="switches" id="kindToggle">
-      <div class="switch-group">
-        <button class="switch-btn active" id="videoTab" onclick="switchKind('video')">Video</button>
-        <button class="switch-btn" id="audioTab" onclick="switchKind('audio')">Audio only</button>
-      </div>
+      <button class="switch-btn active" id="videoTab" onclick="switchKind('video')">Video</button>
+      <button class="switch-btn" id="audioTab" onclick="switchKind('audio')">Audio only</button>
     </div>
 
     <div class="switches" id="compressToggle">
-      <div class="switch-group">
-        <button class="switch-btn active" id="compressOriginal" onclick="switchCompress('original')">Original</button>
-        <button class="switch-btn" id="compressBalanced" onclick="switchCompress('balanced')">Balanced</button>
-        <button class="switch-btn" id="compressSmaller" onclick="switchCompress('smaller')">Smaller</button>
-      </div>
+      <button class="switch-btn active" id="compressOriginal" onclick="switchCompress('original')">Original</button>
+      <button class="switch-btn" id="compressBalanced" onclick="switchCompress('balanced')">Balanced</button>
+      <button class="switch-btn" id="compressSmaller" onclick="switchCompress('smaller')">Smaller</button>
     </div>
 
     <div class="results" id="results"></div>
@@ -484,9 +431,9 @@ PAGE = """
 
     <div class="result-note" id="resultNote"></div>
   </div>
-</div>
 
-<p class="credit">Made by <span>الشيخ قطة</span></p>
+  <p class="credit">Made by <span>الشيخ قطة</span></p>
+</div>
 
 <script>
 const el = id => document.getElementById(id);
@@ -599,7 +546,6 @@ function renderResults() {
     row.innerHTML = `
       <span class="label">${resText}</span>
       ${noteText ? `<span class="note">${noteText}</span>` : ''}
-      <span class="leader"></span>
       <span class="size">${sizeText} · ${badge}</span>
       <button class="btn btn-get">Get</button>
     `;
@@ -621,7 +567,6 @@ function renderDirectResult() {
   const sizeText = directFormat.size ? `${directFormat.size_approx ? '~' : ''}${directFormat.size}` : 'size unknown';
   row.innerHTML = `
     <span class="label">${resText}</span>
-    <span class="leader"></span>
     <span class="size">${sizeText} · ${badge}</span>
     <button class="btn btn-get">Get</button>
   `;
