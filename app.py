@@ -182,22 +182,24 @@ PAGE = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Puller</title>
+<title>puller</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #100c0a;
-    --panel: #1a1411;
-    --panel-2: #211a16;
-    --edge: #34281f;
-    --accent: #ff7a45;
-    --accent-2: #ffb648;
-    --text: #f5ece3;
-    --muted: #a89584;
-    --muted-dim: #6e5c4d;
-    --success: #6fbf7a;
-    --error: #ef6a55;
+    --bg: #1e1e1e;
+    --panel: #252526;
+    --panel-2: #2d2d2d;
+    --edge: #3c3c3c;
+    --text: #d4d4d4;
+    --muted: #858585;
+    --muted-dim: #5a5a5a;
+    --accent: #4ec9b0;
+    --keyword: #c586c0;
+    --string: #ce9178;
+    --success: #6a9955;
+    --error: #f14c4c;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
   }
 
   * { box-sizing: border-box; }
@@ -205,357 +207,276 @@ PAGE = """
   body {
     margin: 0;
     background: var(--bg);
-    background-image:
-      radial-gradient(ellipse 800px 460px at 15% -8%, rgba(255,122,69,0.14), transparent 60%),
-      radial-gradient(ellipse 700px 420px at 100% 10%, rgba(255,182,72,0.08), transparent 55%);
     color: var(--text);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--mono);
+    font-size: 14px;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
+    padding: 40px 16px;
   }
 
-  ::selection { background: rgba(255,122,69,0.35); color: var(--text); }
+  ::selection { background: rgba(78,201,176,0.3); color: var(--text); }
 
-  .site-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 720px;
+  .window {
+    max-width: 620px;
     margin: 0 auto;
-    padding: 28px 24px 0;
-  }
-
-  .wordmark {
-    font-family: 'Sora', sans-serif;
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: -0.2px;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-  }
-  .wordmark .dot {
-    width: 9px; height: 9px; border-radius: 3px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  }
-
-  .hero {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 52px 24px 6px;
-    text-align: center;
-  }
-
-  h1 {
-    font-family: 'Sora', sans-serif;
-    font-weight: 700;
-    font-size: clamp(28px, 4.6vw, 42px);
-    line-height: 1.12;
-    margin: 0 0 12px;
-    letter-spacing: -0.7px;
-  }
-  h1 span {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  .hero p {
-    color: var(--muted);
-    font-size: 15px;
-    line-height: 1.6;
-    max-width: 460px;
-    margin: 0 auto 36px;
-  }
-
-  .panel {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 0 24px 40px;
-  }
-
-  .input-row {
-    display: flex;
-    gap: 8px;
     background: var(--panel);
     border: 1px solid var(--edge);
-    border-radius: 14px;
-    padding: 6px 6px 6px 18px;
-    transition: border-color 0.15s ease;
+    border-radius: 6px;
+    overflow: hidden;
   }
-  .input-row:focus-within { border-color: var(--accent); }
 
-  .input-row input {
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 14px;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--edge);
+  }
+  .titlebar .dots { display: flex; gap: 7px; }
+  .titlebar .dots span { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .titlebar .dots span:nth-child(1) { background: #ff5f56; }
+  .titlebar .dots span:nth-child(2) { background: #ffbd2e; }
+  .titlebar .dots span:nth-child(3) { background: #27c93f; }
+  .titlebar .path { color: var(--muted); font-size: 12.5px; }
+
+  .body {
+    padding: 20px 22px 24px;
+  }
+
+  .comment { color: var(--muted-dim); font-size: 13px; margin: 0 0 16px; }
+  .comment .kw { color: var(--muted); }
+
+  .prompt-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg);
+    border: 1px solid var(--edge);
+    border-radius: 4px;
+    padding: 0 6px 0 14px;
+  }
+  .prompt-row .caret { color: var(--accent); font-weight: 600; flex-shrink: 0; }
+  .prompt-row:focus-within { border-color: var(--accent); }
+
+  .prompt-row input {
     flex: 1;
     background: transparent;
     border: none;
     outline: none;
     color: var(--text);
-    font-size: 15px;
-    font-family: 'Inter', sans-serif;
-    padding: 10px 0;
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 11px 0;
   }
-  .input-row input::placeholder { color: var(--muted-dim); }
+  .prompt-row input::placeholder { color: var(--muted-dim); }
 
   .btn {
-    border: none;
-    border-radius: 9px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 13px;
     cursor: pointer;
-    transition: filter 0.15s ease, background 0.15s ease, color 0.15s ease;
-  }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: #1a0d05;
-    padding: 11px 24px;
-  }
-  .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
-
-  .btn-pull {
     background: var(--panel-2);
     color: var(--text);
-    padding: 9px 16px;
-    font-size: 12px;
-    white-space: nowrap;
-    border: 1px solid var(--edge);
+    transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
   }
-  .btn-pull:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-2); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+  .btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+
+  .btn-run { padding: 9px 18px; margin: 7px 0; color: var(--keyword); border-color: transparent; }
+  .btn-run:hover:not(:disabled) { border-color: var(--keyword); color: var(--keyword); background: var(--panel); }
+
+  .btn-get { padding: 7px 13px; font-size: 12px; flex-shrink: 0; }
 
   .meta {
     display: none;
-    margin-top: 16px;
-    padding: 12px 16px;
-    background: var(--panel);
-    border: 1px solid var(--edge);
-    border-radius: 10px;
-    font-size: 13px;
+    margin-top: 14px;
     color: var(--muted);
+    font-size: 13px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .meta::before { content: "> "; color: var(--muted-dim); }
 
-  .kind-toggle {
+  .flags {
     display: none;
-    gap: 8px;
-    margin-top: 18px;
-  }
-  .kind-btn {
-    flex: 1;
-    background: var(--panel);
-    border: 1px solid var(--edge);
-    color: var(--muted);
-    border-radius: 9px;
-    padding: 10px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  }
-  .kind-btn.active { background: var(--panel-2); border-color: var(--accent); color: var(--text); }
-  .kind-btn:hover:not(.active) { border-color: var(--muted-dim); }
-  .kind-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-  .compress-toggle {
-    display: none;
-    align-items: center;
-    gap: 8px;
-    margin-top: 12px;
+    gap: 6px;
+    margin-top: 16px;
     flex-wrap: wrap;
   }
-  .compress-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--muted-dim);
-    margin-right: 2px;
-  }
-  .compress-btn {
-    background: var(--panel);
+  .flag-btn {
+    background: transparent;
     border: 1px solid var(--edge);
     color: var(--muted);
-    border-radius: 999px;
-    padding: 6px 13px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 12px;
+    border-radius: 3px;
+    padding: 5px 11px;
+    font-family: var(--mono);
+    font-size: 12.5px;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition: border-color 0.1s ease, color 0.1s ease;
   }
-  .compress-btn.active { background: var(--panel-2); border-color: var(--accent); color: var(--text); }
-  .compress-btn:hover:not(.active) { border-color: var(--muted-dim); }
-  .compress-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .flag-btn.active { border-color: var(--accent); color: var(--accent); }
+  .flag-btn:hover:not(.active) { color: var(--text); }
+  .flag-btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
 
   .results {
-    margin-top: 12px;
+    margin-top: 16px;
     display: none;
     flex-direction: column;
-    gap: 6px;
+    border-top: 1px solid var(--edge);
   }
 
   .result-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: var(--panel);
-    border: 1px solid var(--edge);
-    border-radius: 9px;
-    padding: 11px 14px;
-    transition: border-color 0.15s ease;
+    padding: 9px 2px;
+    border-bottom: 1px solid var(--edge);
   }
-  .result-row:hover { border-color: var(--accent); }
 
   .result-spec {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11.5px;
-    color: var(--muted);
+    font-size: 12.5px;
+    color: var(--text);
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 10px;
     flex: 1;
     min-width: 0;
   }
   .result-spec .ext {
-    color: var(--accent-2);
-    text-transform: uppercase;
-    font-weight: 600;
-    background: rgba(255,122,69,0.12);
-    padding: 3px 7px;
-    border-radius: 4px;
+    color: var(--string);
     flex-shrink: 0;
+    width: 34px;
   }
-  .result-spec span:not(.ext) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .result-spec .res { color: var(--text); flex-shrink: 0; }
+  .result-spec .note { color: var(--muted-dim); font-size: 11.5px; }
+  .result-spec .size {
+    margin-left: auto;
+    color: var(--muted);
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   .progress-box {
     display: none;
-    align-items: center;
-    gap: 14px;
     margin-top: 16px;
-    background: var(--panel);
+    padding: 12px 0 0;
+    border-top: 1px solid var(--edge);
+  }
+  .progress-line { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .progress-line::before { content: "> "; color: var(--muted-dim); }
+  .progress-track {
+    height: 14px;
+    background: var(--bg);
     border: 1px solid var(--edge);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 2px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
   }
-
-  .spinner {
-    width: 22px; height: 22px;
-    border: 2.5px solid var(--edge);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    flex-shrink: 0;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) {
-    .spinner { animation: none; border-top-color: var(--edge); }
-  }
-
-  .progress-info { flex: 1; min-width: 0; }
-  .progress-line { font-size: 13px; margin-bottom: 8px; color: var(--text); font-weight: 500; }
-  .progress-track { height: 5px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
   .progress-fill {
-    height: 100%; width: 0%;
-    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15) 3px, transparent 3px, transparent 7px);
     transition: width 0.4s ease;
-    border-radius: 3px;
   }
-  .progress-pct {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    color: var(--accent-2);
-    width: 56px;
-    text-align: right;
-    flex-shrink: 0;
+  .progress-pct { font-size: 12px; color: var(--muted); margin-top: 6px; text-align: right; }
+  @media (prefers-reduced-motion: reduce) {
+    .progress-fill { transition: none; }
   }
 
   .result-note {
     margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--edge);
     display: none;
     align-items: center;
-    gap: 10px;
-    border-radius: 9px;
-    padding: 12px 15px;
+    gap: 12px;
     font-size: 13px;
-    font-weight: 500;
   }
-  .result-note.ok { background: rgba(111,191,122,0.12); border: 1px solid rgba(111,191,122,0.3); color: var(--success); }
-  .result-note.err { background: rgba(239,106,85,0.12); border: 1px solid rgba(239,106,85,0.3); color: var(--error); }
+  .result-note::before { content: "> "; color: var(--muted-dim); }
+  .result-note.ok { color: var(--success); }
+  .result-note.err { color: var(--error); }
+  .result-note .get-link {
+    margin-left: auto;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 5px 11px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .result-note .get-link:hover { border-color: var(--accent); }
 
-  footer {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px 24px 40px;
-    text-align: center;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.4px;
+  .credit {
+    max-width: 620px;
+    margin: 14px auto 0;
     color: var(--muted-dim);
+    font-size: 12px;
   }
-  footer span { color: var(--accent-2); }
+  .credit::before { content: "// "; }
+  .credit span { color: var(--muted); }
 
   @media (max-width: 560px) {
-    .input-row { flex-direction: column; border-radius: 16px; padding: 12px; }
-    .input-row input { padding: 6px 4px; }
-    .btn-primary { width: 100%; }
+    body { padding: 20px 10px; }
+    .prompt-row { flex-wrap: wrap; padding: 10px 12px; }
+    .btn-run { width: 100%; text-align: center; }
     .result-row { flex-wrap: wrap; }
-    .btn-pull { width: 100%; }
   }
 </style>
 </head>
 <body>
 
-<header class="site-header">
-  <div class="wordmark"><span class="dot"></span>Puller</div>
-</header>
-
-<section class="hero">
-  <h1>Pull the <span>file</span>, skip everything else.</h1>
-  <p>Paste a link from any video site, or a direct file link. Pick a format. Get the file.</p>
-</section>
-
-<div class="panel">
-  <div class="input-row">
-    <input type="text" id="url" placeholder="Paste a video or file URL…" autocomplete="off">
-    <button class="btn btn-primary" id="loadBtn" onclick="fetchFormats()">Pull</button>
+<div class="window">
+  <div class="titlebar">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <div class="path">~/puller</div>
   </div>
 
-  <div class="meta" id="meta"></div>
+  <div class="body">
+    <p class="comment"><span class="kw">//</span> paste a link — video site or direct file — and run it</p>
 
-  <div class="kind-toggle" id="kindToggle">
-    <button class="kind-btn active" id="videoTab" onclick="switchKind('video')">Video</button>
-    <button class="kind-btn" id="audioTab" onclick="switchKind('audio')">Audio only</button>
-  </div>
-
-  <div class="compress-toggle" id="compressToggle">
-    <span class="compress-label">Compress</span>
-    <button class="compress-btn active" id="compressOriginal" onclick="switchCompress('original')">Original</button>
-    <button class="compress-btn" id="compressBalanced" onclick="switchCompress('balanced')">Balanced</button>
-    <button class="compress-btn" id="compressSmaller" onclick="switchCompress('smaller')">Smaller</button>
-  </div>
-
-  <div class="results" id="results"></div>
-
-  <div class="progress-box" id="progressBox">
-    <div class="spinner"></div>
-    <div class="progress-info">
-      <div class="progress-line" id="progressLine">Starting…</div>
-      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="prompt-row">
+      <span class="caret">$</span>
+      <input type="text" id="url" placeholder="https://..." autocomplete="off">
+      <button class="btn btn-run" id="loadBtn" onclick="fetchFormats()">run</button>
     </div>
-    <div class="progress-pct" id="progressPct">0%</div>
-  </div>
 
-  <div class="result-note" id="resultNote"></div>
+    <div class="meta" id="meta"></div>
+
+    <div class="flags" id="kindToggle">
+      <button class="flag-btn active" id="videoTab" onclick="switchKind('video')">--video</button>
+      <button class="flag-btn" id="audioTab" onclick="switchKind('audio')">--audio</button>
+    </div>
+
+    <div class="flags" id="compressToggle">
+      <button class="flag-btn active" id="compressOriginal" onclick="switchCompress('original')">--raw</button>
+      <button class="flag-btn" id="compressBalanced" onclick="switchCompress('balanced')">--balanced</button>
+      <button class="flag-btn" id="compressSmaller" onclick="switchCompress('smaller')">--small</button>
+    </div>
+
+    <div class="results" id="results"></div>
+
+    <div class="progress-box" id="progressBox">
+      <div class="progress-line" id="progressLine">starting…</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-pct" id="progressPct">0%</div>
+    </div>
+
+    <div class="result-note" id="resultNote"></div>
+  </div>
 </div>
 
-<footer>Built by <span>الشيخ قطة</span></footer>
+<p class="credit">built by <span>الشيخ قطة</span></p>
 
 <script>
 const el = id => document.getElementById(id);
@@ -579,10 +500,10 @@ async function fetchFormats() {
   el('kindToggle').style.display = 'none';
   el('compressToggle').style.display = 'none';
 
-  if (!url) { showResult(false, 'Paste a link first.'); return; }
+  if (!url) { showResult(false, 'paste a link first.'); return; }
 
   loadBtn.disabled = true;
-  loadBtn.textContent = 'Reading…';
+  loadBtn.textContent = 'reading…';
   try {
     const res = await fetch('/formats', {
       method: 'POST',
@@ -617,10 +538,10 @@ async function fetchFormats() {
       renderResults();
     }
   } catch (e) {
-    showResult(false, 'Could not reach that source. Check the link and try again.');
+    showResult(false, 'could not reach that source — check the link and try again.');
   } finally {
     loadBtn.disabled = false;
-    loadBtn.textContent = 'Pull';
+    loadBtn.textContent = 'run';
   }
 }
 
@@ -652,7 +573,7 @@ function renderResults() {
   if (!items.length) {
     const row = document.createElement('div');
     row.className = 'result-row';
-    row.innerHTML = `<div class="result-spec">No ${activeKind} formats available for this source.</div>`;
+    row.innerHTML = `<div class="result-spec">no ${activeKind} formats available for this source.</div>`;
     list.appendChild(row);
     list.style.display = 'flex';
     return;
@@ -661,12 +582,16 @@ function renderResults() {
   items.forEach(f => {
     const row = document.createElement('div');
     row.className = 'result-row';
-    const specText = activeKind === 'video' ? f.resolution + (f.codec_note || '') : (f.abr ? f.abr + ' kbps' : 'audio');
-    const badge = activeKind === 'video' ? 'MP4' : f.ext;
-    const sizeText = f.size ? `<span>${f.size_approx ? '~' : ''}${f.size}</span>` : '<span>Size unknown</span>';
+    const resText = activeKind === 'video' ? f.resolution : (f.abr ? f.abr + 'kbps' : 'audio');
+    const badge = activeKind === 'video' ? 'mp4' : f.ext;
+    const noteText = (activeKind === 'video' && f.codec_note) ? f.codec_note.replace(' · ', '') : '';
+    const sizeText = f.size ? `${f.size_approx ? '~' : ''}${f.size}` : 'size unknown';
     row.innerHTML = `
-      <div class="result-spec"><span class="ext">${badge}</span><span>${specText}</span>${sizeText}</div>
-      <button class="btn btn-pull">Pull</button>
+      <div class="result-spec">
+        <span class="ext">${badge}</span><span class="res">${resText}</span>${noteText ? `<span class="note">${noteText}</span>` : ''}
+        <span class="size">${sizeText}</span>
+      </div>
+      <button class="btn btn-get">get</button>
     `;
     row.querySelector('button').addEventListener('click', () =>
       startDownload(currentUrl, f.format_id, f.has_audio, activeKind, currentTitle, null,
@@ -681,12 +606,15 @@ function renderDirectResult() {
   list.innerHTML = '';
   const row = document.createElement('div');
   row.className = 'result-row';
-  const badge = (directFormat.ext || 'file').toUpperCase();
-  const specText = directFormat.label || 'Direct file';
-  const sizeText = directFormat.size ? `<span>${directFormat.size_approx ? '~' : ''}${directFormat.size}</span>` : '<span>Size unknown</span>';
+  const badge = (directFormat.ext || 'file').toLowerCase();
+  const resText = directFormat.label || 'direct file';
+  const sizeText = directFormat.size ? `${directFormat.size_approx ? '~' : ''}${directFormat.size}` : 'size unknown';
   row.innerHTML = `
-    <div class="result-spec"><span class="ext">${badge}</span><span>${specText}</span>${sizeText}</div>
-    <button class="btn btn-pull">Pull</button>
+    <div class="result-spec">
+      <span class="ext">${badge}</span><span class="res">${resText}</span>
+      <span class="size">${sizeText}</span>
+    </div>
+    <button class="btn btn-get">get</button>
   `;
   row.querySelector('button').addEventListener('click', () =>
     startDownload(currentUrl, '__direct__', false, 'direct', currentTitle, directFormat.ext, 'original', null));
@@ -696,8 +624,8 @@ function renderDirectResult() {
 
 async function startDownload(url, formatId, hasAudio, kind, title, ext, compress, clientMode) {
   el('resultNote').style.display = 'none';
-  el('progressBox').style.display = 'flex';
-  el('progressLine').textContent = 'Starting…';
+  el('progressBox').style.display = 'block';
+  el('progressLine').textContent = 'starting…';
   el('progressFill').style.width = '0%';
   el('progressPct').textContent = '0%';
 
@@ -711,7 +639,7 @@ async function startDownload(url, formatId, hasAudio, kind, title, ext, compress
     if (data.error) { finishProgress(false, data.error); return; }
     pollProgress(data.job_id);
   } catch (e) {
-    finishProgress(false, 'Could not start the download.');
+    finishProgress(false, 'could not start the download.');
   }
 }
 
@@ -721,15 +649,15 @@ function pollProgress(jobId) {
     const data = await res.json();
     if (data.status === 'downloading') {
       const pctText = (data.percent || '0%').trim();
-      el('progressLine').textContent = 'Downloading…';
+      el('progressLine').textContent = 'downloading…';
       el('progressPct').textContent = pctText;
       const num = parseFloat(pctText);
       if (!isNaN(num)) el('progressFill').style.width = num + '%';
     } else if (data.status === 'processing') {
-      el('progressLine').textContent = 'Finishing up…';
+      el('progressLine').textContent = 'finishing up…';
     } else if (data.status === 'compressing') {
       const pctText = (data.percent || '').trim();
-      el('progressLine').textContent = 'Compressing…';
+      el('progressLine').textContent = 'compressing…';
       el('progressPct').textContent = pctText || '…';
       const num = parseFloat(pctText);
       if (!isNaN(num)) el('progressFill').style.width = num + '%';
@@ -756,15 +684,14 @@ function showResult(ok, message, downloadUrl) {
   r.innerHTML = '';
 
   const text = document.createElement('span');
-  text.textContent = (ok ? '✓ ' : '✕ ') + message;
+  text.textContent = (ok ? 'saved: ' : 'error: ') + message;
   r.appendChild(text);
 
   if (ok && downloadUrl) {
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.textContent = 'Download';
-    link.className = 'btn btn-primary';
-    link.style.marginLeft = 'auto';
+    link.textContent = 'get file';
+    link.className = 'get-link';
     link.setAttribute('download', '');
     r.appendChild(link);
     // Kick off the browser download automatically too, so the person
