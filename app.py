@@ -193,8 +193,8 @@ PAGE = """
     --ink: #f3f0e8;
     --muted: #a39c8d;
     --muted-soft: #6b655a;
-    --accent: #c9a24d;
-    --accent-soft: rgba(201,162,77,0.12);
+    --accent: #ffffff;
+    --accent-soft: rgba(255,255,255,0.10);
     --error: #d1685c;
     --error-soft: rgba(209,104,92,0.12);
   }
@@ -204,7 +204,7 @@ PAGE = """
   body {
     margin: 0;
     background: var(--bg);
-    background-image: radial-gradient(ellipse 640px 360px at 50% -6%, rgba(201,162,77,0.10), transparent 65%);
+    background-image: radial-gradient(ellipse 640px 360px at 50% -6%, rgba(255,255,255,0.06), transparent 65%);
     color: var(--ink);
     font-family: 'Manrope', sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -221,9 +221,9 @@ PAGE = """
     width: 34px; height: 34px;
     margin: 0 auto 16px;
     border-radius: 9px;
-    background: linear-gradient(155deg, var(--accent), #8a6c2e);
+    background: linear-gradient(155deg, #ffffff, #9a9690);
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 8px 20px -8px rgba(201,162,77,0.5);
+    box-shadow: 0 8px 20px -8px rgba(255,255,255,0.25);
   }
   .lede .mark svg { width: 16px; height: 16px; }
   .lede h1 {
@@ -245,7 +245,7 @@ PAGE = """
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 23px 22px 22px;
-    box-shadow: 0 20px 48px -26px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,162,77,0.04);
+    box-shadow: 0 20px 48px -26px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
     overflow: hidden;
   }
   .card::before {
@@ -294,7 +294,7 @@ PAGE = """
 
   .btn-primary {
     background: var(--accent);
-    color: #1a1408;
+    color: #111111;
     border-radius: 8px;
     padding: 11px 20px;
     white-space: nowrap;
@@ -394,7 +394,7 @@ PAGE = """
   .result-note.err { background: var(--error-soft); color: var(--error); }
   .result-note .get-link {
     margin-left: auto;
-    color: #1a1408;
+    color: #111111;
     background: var(--accent);
     text-decoration: none;
     border-radius: 8px;
@@ -426,7 +426,7 @@ PAGE = """
 <div class="wrap">
   <div class="lede">
     <div class="mark">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#1a1408" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 3v13"/>
         <path d="M6 11l6 6 6-6"/>
         <path d="M5 21h14"/>
