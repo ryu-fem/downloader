@@ -187,16 +187,16 @@ PAGE = """
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f1efe9;
-    --surface: #ffffff;
-    --border: #e3ddd0;
-    --ink: #23261f;
-    --muted: #756f61;
-    --muted-soft: #9a9384;
-    --accent: #3d5c43;
-    --accent-soft: #e9efe6;
-    --error: #b3453c;
-    --error-soft: #f7e9e7;
+    --bg: #0e0e0d;
+    --surface: #1a1917;
+    --border: #302e29;
+    --ink: #f3f0e8;
+    --muted: #a39c8d;
+    --muted-soft: #6b655a;
+    --accent: #c9a24d;
+    --accent-soft: rgba(201,162,77,0.12);
+    --error: #d1685c;
+    --error-soft: rgba(209,104,92,0.12);
   }
 
   * { box-sizing: border-box; }
@@ -234,7 +234,7 @@ PAGE = """
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 22px;
-    box-shadow: 0 16px 40px -24px rgba(35,38,31,0.25);
+    box-shadow: 0 16px 40px -24px rgba(0,0,0,0.6);
   }
 
   .field-row { display: flex; gap: 10px; }
@@ -268,7 +268,7 @@ PAGE = """
 
   .btn-primary {
     background: var(--accent);
-    color: #fff;
+    color: #1a1408;
     padding: 13px 22px;
     white-space: nowrap;
   }
@@ -367,7 +367,7 @@ PAGE = """
   .result-note.err { background: var(--error-soft); color: var(--error); }
   .result-note .get-link {
     margin-left: auto;
-    color: #fff;
+    color: #1a1408;
     background: var(--accent);
     text-decoration: none;
     border-radius: 8px;
@@ -432,7 +432,7 @@ PAGE = """
     <div class="result-note" id="resultNote"></div>
   </div>
 
-  <p class="credit">Made by <span>الشيخ قطة</span></p>
+  <p class="credit">built by <span>الشيخ قطة</span></p>
 </div>
 
 <script>
